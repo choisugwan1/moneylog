@@ -7,13 +7,13 @@ const {
     updateTransaction,
     deleteTransaction,
     getTransactionSummary,
-} = require("../controllers/transactionConstroller");
+} = require("../controllers/transactionController");
 
-const authMiddelware = require("../middleware/authMiddleware");
+const authMiddleware = require("../middleware/authMiddleware");
 
 router.post("/", authMiddleware, createTransaction);
-router.get("/", authMiddleware, getTransations);
+router.get("/", authMiddleware, getTransactions);
 router.put("/:id", authMiddleware, updateTransaction);
 router.delete("/:id", authMiddleware, deleteTransaction);
-router.get("/summary",authMiddelware, getTransactionSummary);
+router.get("/summary",authMiddleware, getTransactionSummary);
 module.exports = router;

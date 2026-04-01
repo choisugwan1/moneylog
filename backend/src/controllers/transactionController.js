@@ -42,7 +42,7 @@ const getTransactions = async(req, res) => {
     }
 };
 
-const uqdateTransaction = async (req, res) => {
+const updateTransaction = async (req, res) => {
     try{
         const userId = req.user.userId;
         const transactionId = Number(req.params.id);
@@ -101,7 +101,7 @@ const getTransactionSummary = async(req, res)=> {
 module.exports = {
   createTransaction,
   getTransactions,
-  uqdateTransaction,
+  updateTransaction,
   deleteTransaction,
   getTransactionSummary,
 };
