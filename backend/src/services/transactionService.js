@@ -120,9 +120,9 @@ const getTransactionSummaryService = async(userId, month) => {
     let expense = 0;
 
     for (const transaction of transactions) {
-        if (transaction.type === "income"){
+        if (transaction.type === "INCOME"){
             income += transaction.amount;
-        }else if (transaction.type === "expense"){
+        }else if (transaction.type === "EXPENSE"){
             expense += transaction.amount;
         }
     }

@@ -11,7 +11,16 @@ function DashboardPage() {
     balance: 0,
   });
 
+  const [type, setType] = useState("EXPENSE");
+  const [category, setCategory] = useState("");
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [message, setMessage] = useState("");
+
   const navigate = useNavigate();
+
+  const getToken = () => localStorage.getItem("token");
 
   const fetchMe = async (token) => {
     try {
@@ -42,12 +51,14 @@ function DashboardPage() {
     }
   };
 
-  const fetchSummary = async (token) => {
+  const fetchSummary = async (
+  token,
+  month = new Date().toISOString().slice(0, 7)
+) => {
     try {
-      const currentMonth = new Date().toISOString().slice(0, 7);
 
       const res = await axios.get(
-        `http://localhost:3000/transactions/summary?month=${currentMonth}`,
+        `http://localhost:3000/transactions/summary?month=${month}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -65,8 +76,22 @@ function DashboardPage() {
     }
   };
 
+const refreshData = async () => {
+  const token = getToken();
+
+  if (!token) {
+    navigate("/login");
+    return;
+  }
+
+  const selectedMonth = date.slice(0, 7);
+
+  await fetchTransactions(token);
+  await fetchSummary(token, selectedMonth);
+};
+
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
 
     if (!token) {
       navigate("/login");
@@ -77,6 +102,67 @@ function DashboardPage() {
     fetchTransactions(token);
     fetchSummary(token);
   }, []);
+
+  const handleAddTransaction = async () => {
+    try {
+      const token = getToken();
+
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      await axios.post(
+        "http://localhost:3000/transactions",
+        {
+          type,
+          category,
+          amount: Number(amount),
+          description,
+          date,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setMessage("거래 등록 성공!");
+
+      setCategory("");
+      setAmount("");
+      setDescription("");
+      setDate(new Date().toISOString().slice(0, 10));
+
+      await refreshData();
+    } catch (error) {
+      setMessage(error.response?.data?.message || "거래 등록 실패");
+    }
+  };
+
+  const handleDeleteTransaction = async (id) => {
+    try {
+      const token = getToken();
+
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      await axios.delete(`http://localhost:3000/transactions/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setMessage("거래 삭제 성공!");
+
+      await refreshData();
+    } catch (error) {
+      setMessage(error.response?.data?.message || "거래 삭제 실패");
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -100,6 +186,66 @@ function DashboardPage() {
 
       <hr />
 
+      <h2>거래 등록</h2>
+
+      <div>
+        <select value={type} onChange={(e) => setType(e.target.value)}>
+          <option value="INCOME">수입</option>
+          <option value="EXPENSE">지출</option>
+        </select>
+      </div>
+
+      <br />
+
+      <div>
+        <input
+          type="text"
+          placeholder="카테고리"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        />
+      </div>
+
+      <br />
+
+      <div>
+        <input
+          type="number"
+          placeholder="금액"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+      </div>
+
+      <br />
+
+      <div>
+        <input
+          type="text"
+          placeholder="설명"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+
+      <br />
+
+      <div>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+      </div>
+
+      <br />
+
+      <button onClick={handleAddTransaction}>거래 등록</button>
+
+      <p>{message}</p>
+
+      <hr />
+
       <h2>거래 목록</h2>
 
       {transactions.length === 0 ? (
@@ -110,7 +256,10 @@ function DashboardPage() {
             <li key={transaction.id}>
               [{transaction.type}] {transaction.category} /{" "}
               {transaction.amount}원 / {transaction.description} /{" "}
-              {new Date(transaction.date).toLocaleDateString()}
+              {new Date(transaction.date).toLocaleDateString()}{" "}
+              <button onClick={() => handleDeleteTransaction(transaction.id)}>
+                삭제
+              </button>
             </li>
           ))}
         </ul>
