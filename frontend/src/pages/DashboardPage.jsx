@@ -10,6 +10,11 @@ function DashboardPage() {
     expense: 0,
     balance: 0,
   });
+  const [editingId, setEditingId] = useState(null);
+  const  [selectedMonth, setSelectedMonth] = useState(
+    new Date().toISOString().slice(0,7)
+  );
+
 
   const [type, setType] = useState("EXPENSE");
   const [category, setCategory] = useState("");
@@ -37,9 +42,9 @@ function DashboardPage() {
     }
   };
 
-  const fetchTransactions = async (token) => {
+  const fetchTransactions = async (token, month = selectedMonth) => {
     try {
-      const res = await axios.get("http://localhost:3000/transactions", {
+      const res = await axios.get(`http://localhost:3000/transactions?month=${month}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -84,9 +89,7 @@ const refreshData = async () => {
     return;
   }
 
-  const selectedMonth = date.slice(0, 7);
-
-  await fetchTransactions(token);
+  await fetchTransactions(token, selectedMonth);
   await fetchSummary(token, selectedMonth);
 };
 
@@ -99,28 +102,31 @@ const refreshData = async () => {
     }
 
     fetchMe(token);
-    fetchTransactions(token);
-    fetchSummary(token);
+    fetchTransactions(token, selectedMonth);
+    fetchSummary(token, selectedMonth);
   }, []);
 
-  const handleAddTransaction = async () => {
+  const handleSubmitTransaction = async () => {
     try {
       const token = getToken();
 
-      if (!token) {
+      if (!token){
         navigate("/login");
         return;
       }
 
-      await axios.post(
-        "http://localhost:3000/transactions",
-        {
-          type,
-          category,
-          amount: Number(amount),
-          description,
-          date,
-        },
+      const transactionData = {
+        type,
+        category,
+        amount: Number(amount),
+        description,
+        date,
+      };
+
+      if (editingId) {
+      await axios.put(
+        `http://localhost:3000/transactions/${editingId}`,
+        transactionData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -128,19 +134,33 @@ const refreshData = async () => {
         }
       );
 
-      setMessage("거래 등록 성공!");
+      setMessage("거래 수정 성공");
+      setEditingId(null);
+    }else {
+      await axios.post(
+        "http://localhost:3000/transactions",
+        transactionData,
+        {
+          headers: {
+            Authorization : `Bearer ${token}`,
+          },
+        }
+      );
 
-      setCategory("");
-      setAmount("");
-      setDescription("");
-      setDate(new Date().toISOString().slice(0, 10));
-
-      await refreshData();
-    } catch (error) {
-      setMessage(error.response?.data?.message || "거래 등록 실패");
+      setMessage("거래 등록 성공");
     }
-  };
 
+    setCategory("");
+    setAmount("");
+    setDescription("");
+    setDate(new Date().toISOString().slice(0,10));
+    setType("EXPENSE");
+
+    await refreshData();
+  }catch(error){
+    setMessage(error.response?.data?.message || "거래 저장 실패");
+  }
+};
   const handleDeleteTransaction = async (id) => {
     try {
       const token = getToken();
@@ -164,6 +184,29 @@ const refreshData = async () => {
     }
   };
 
+  const handleStartEdit = (transaction) => {
+    setEditingId(transaction.id);
+    setType(transaction.type);
+    setCategory(transaction.category);
+    setAmount(transaction.amount);
+    setDescription(transaction.description);
+    setDate(transaction.date.slice(0,10));
+  };
+
+  const handleMonthChange = async (e) => {
+    const month = e.target.value;
+    setSelectedMonth(month);
+
+    const token = getToken();
+    if (!token){
+      navigate("/login");
+      return;
+    }
+
+    await fetchTransactions(token, month);
+    await fetchSummary(token, month);
+  }
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
@@ -176,6 +219,15 @@ const refreshData = async () => {
       <p>로그인한 사용자 이메일: {user?.email}</p>
 
       <button onClick={handleLogout}>로그아웃</button>
+
+      <div>
+        <label>조회 월:</label>
+        <input
+          type="month"
+          value={selectedMonth}
+          onChange={handleMonthChange}
+        />
+      </div>
 
       <hr />
 
@@ -240,7 +292,9 @@ const refreshData = async () => {
 
       <br />
 
-      <button onClick={handleAddTransaction}>거래 등록</button>
+      <button onClick={handleSubmitTransaction}>
+        {editingId ? "거래 수정" : "거래 등록"}
+      </button>
 
       <p>{message}</p>
 
@@ -259,6 +313,9 @@ const refreshData = async () => {
               {new Date(transaction.date).toLocaleDateString()}{" "}
               <button onClick={() => handleDeleteTransaction(transaction.id)}>
                 삭제
+              </button>
+              <button onClick={() => handleStartEdit(transaction)}>
+                수정
               </button>
             </li>
           ))}

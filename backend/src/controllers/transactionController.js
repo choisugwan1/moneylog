@@ -92,7 +92,7 @@ const getTransactionSummary = async(req, res)=> {
         res.status(200).json(summary);
         
     }catch(error){
-        res.staus(400).json({
+        res.status(400).json({
             message: error.message,
         });
     }

@@ -51,34 +51,34 @@ const getTransactionsService = async(userId, filters)=>{
     return transactions;
 };
 
-const updateTransactionService = async (userId, transactionId, data) =>{
-    const existingTransaction = await prisma.transaction.findUnique({
-        where: {id : transactionId},
-    });
+const updateTransactionService = async (userId, transactionId, data) => {
+  const existingTransaction = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+  });
 
-    if (!existingTransaction){
-        throw new Error("거래를 찾을 수 없습니다");
-    }
-    
-    if (existingTransaction.userId !== userId){
-        throw new Error("본인의 거래만 수정할 수 있습니다");
-    }
+  if (!existingTransaction) {
+    throw new Error("거래를 찾을 수 없습니다");
+  }
 
-    const {type, amount, category, description, date} = data;
+  if (existingTransaction.userId !== userId) {
+    throw new Error("본인의 거래만 수정할 수 있습니다");
+  }
 
-    const uqdatedTransaction = await prisma.transation.update({
-        where: {id : transactionId},
-        data: {
-            type,
-            amount,
-            category,
-            description,
-            date: new Date(date),
-        },
-    });
-    return uqdatedTransaction;
+  const { type, amount, category, description, date } = data;
+
+  const updatedTransaction = await prisma.transaction.update({
+    where: { id: transactionId },
+    data: {
+      type,
+      amount,
+      category,
+      description,
+      date: new Date(date),
+    },
+  });
+
+  return updatedTransaction;
 };
-
 const deleteTransactionService = async(userId, transactionId) => {
     const existingTransaction = await prisma.transaction.findUnique({
         where: {id : transactionId},
