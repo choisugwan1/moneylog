@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import "./DashboardPage.css";
+
 
 function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -213,7 +215,7 @@ const refreshData = async () => {
   };
 
   return (
-    <div style={{ padding: "50px" }}>
+    <div className= "dashboard-page">
       <h1>MoneyLog 대시보드</h1>
 
       <p>로그인한 사용자 이메일: {user?.email}</p>
