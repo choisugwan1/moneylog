@@ -16,6 +16,8 @@ function DashboardPage() {
   const  [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0,7)
   );
+  const [filterType, setFilterType] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
 
 
   const [type, setType] = useState("EXPENSE");
@@ -44,19 +46,33 @@ function DashboardPage() {
     }
   };
 
-  const fetchTransactions = async (token, month = selectedMonth) => {
-    try {
-      const res = await axios.get(`http://localhost:3000/transactions?month=${month}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+ const fetchTransactions = async (
+  token,
+  month = selectedMonth,
+  type = filterType,
+  category = filterCategory
+ ) => {
+  try {
+    const params = new URLSearchParams();
 
-      setTransactions(res.data.transactions);
-    } catch (error) {
-      setTransactions([]);
-    }
-  };
+    if (month) params.append("month", month);
+    if (type) params.append("type", type);
+    if (category) params.append("category", category);
+
+    const res = await axios.get(
+      `http://localhost:3000/transactions?${params.toString()}`,
+      {
+        headers: {
+          Authorization : `Bearer ${token}`,
+        },
+      }
+    )
+
+    setTransactions(res.data.transaction);
+  }catch(error){
+    setTransactions([]);
+  }
+ };
 
   const fetchSummary = async (
   token,
@@ -91,9 +107,10 @@ const refreshData = async () => {
     return;
   }
 
-  await fetchTransactions(token, selectedMonth);
+  await fetchTransactions(token, selectedMonth, filterType, filterCategory);
   await fetchSummary(token, selectedMonth);
-};
+}
+
 
   useEffect(() => {
     const token = getToken();
@@ -205,8 +222,8 @@ const refreshData = async () => {
       return;
     }
 
-    await fetchTransactions(token, month);
-    await fetchSummary(token, month);
+    await fetchTransactions(token, month, filterType, filterCategory);
+    await fetchSummary(token, month, filterType, filterCategory);
   }
 
   const handleLogout = () => {
@@ -214,16 +231,53 @@ const refreshData = async () => {
     navigate("/login");
   };
 
+  const handleApplyFilter = async() => {
+    const token = getToken();
+
+    if (!token){
+      navigate("/login");
+      return;
+    }
+    
+    await fetchTransactions(token, selectedMonth, filterType, filterCategory)
+  }
+
+  const handleResetFilter = async () => {
+    const token = getToken();
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    setFilterType("");
+    setFilterCategory("");
+
+    await fetchTransactions(token, selectedMonth, "", "");
+  };
+
   return (
-    <div className= "dashboard-page">
-      <h1>MoneyLog 대시보드</h1>
+  <div className="dashboard-page">
+    <header className="dashboard-header">
+      <div className="header-left">
+        <h1 className="logo">
+          Money<span>Log</span>
+        </h1>
+        <span className="divider">|</span>
+        <span className="page-name">대시보드</span>
+      </div>
 
-      <p>로그인한 사용자 이메일: {user?.email}</p>
+      <div className="header-right">
+        <span>로그인한 사용자: {user?.email}</span>
+        <button className="logout-button" onClick={handleLogout}>
+          로그아웃
+        </button>
+      </div>
+    </header>
 
-      <button onClick={handleLogout}>로그아웃</button>
-
-      <div>
-        <label>조회 월:</label>
+    <main className="dashboard-main">
+      <div className="month-filter">
+        <label>조회 월 :</label>
         <input
           type="month"
           value={selectedMonth}
@@ -231,100 +285,181 @@ const refreshData = async () => {
         />
       </div>
 
-      <hr />
+      <h2 className="section-title">이번 달 요약</h2>
 
-      <h2>이번 달 요약</h2>
-      <p>수입: {summary.income}원</p>
-      <p>지출: {summary.expense}원</p>
-      <p>잔액: {summary.balance}원</p>
+      <section className="summary-grid">
+        <div className="summary-card">
+          <div className="summary-icon income-bg">↑</div>
+          <div>
+            <p className="summary-label">수입</p>
+            <p className="summary-value income-text">
+              {summary.income.toLocaleString()}원
+            </p>
+            <p className="summary-desc">이번 달 총 수입</p>
+          </div>
+        </div>
 
-      <hr />
+        <div className="summary-card">
+          <div className="summary-icon expense-bg">↓</div>
+          <div>
+            <p className="summary-label">지출</p>
+            <p className="summary-value expense-text">
+              {summary.expense.toLocaleString()}원
+            </p>
+            <p className="summary-desc">이번 달 총 지출</p>
+          </div>
+        </div>
 
-      <h2>거래 등록</h2>
+        <div className="summary-card">
+          <div className="summary-icon balance-bg">💳</div>
+          <div>
+            <p className="summary-label">잔액</p>
+            <p className="summary-value balance-text">
+              {summary.balance.toLocaleString()}원
+            </p>
+            <p className="summary-desc">수입 - 지출</p>
+          </div>
+        </div>
+      </section>
 
-      <div>
-        <select value={type} onChange={(e) => setType(e.target.value)}>
-          <option value="INCOME">수입</option>
-          <option value="EXPENSE">지출</option>
-        </select>
-      </div>
+      <section className="panel">
+        <h2 className="panel-title">거래 등록</h2>
 
-      <br />
+        <div className="transaction-form">
+          <select value={type} onChange={(e) => setType(e.target.value)}>
+            <option value="EXPENSE">지출</option>
+            <option value="INCOME">수입</option>
+          </select>
 
-      <div>
-        <input
-          type="text"
-          placeholder="카테고리"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        />
-      </div>
+          <input
+            type="text"
+            placeholder="카테고리 (예: 식비)"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          />
 
-      <br />
+          <input
+            type="number"
+            placeholder="금액 (예: 15000)"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
 
-      <div>
-        <input
-          type="number"
-          placeholder="금액"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-      </div>
+          <input
+            type="text"
+            placeholder="설명 (선택)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
 
-      <br />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
 
-      <div>
-        <input
-          type="text"
-          placeholder="설명"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
+          <button className="primary-button" onClick={handleSubmitTransaction}>
+            {editingId ? "거래 수정" : "거래 등록"}
+          </button>
+        </div>
 
-      <br />
+        {message && <p className="message">{message}</p>}
+      </section>
 
-      <div>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
-      </div>
+      <section className="panel">
+        <h2 className="panel-title">거래 내역</h2>
+          <div className= "filter-box">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <option value="">전체</option>
+              <option value="INCOME">수입</option>
+              <option value="EXPENSE">지출</option>
+            </select>
 
-      <br />
+            <input
+              type="text"
+              placeholder="카테고리 검색"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+            />
 
-      <button onClick={handleSubmitTransaction}>
-        {editingId ? "거래 수정" : "거래 등록"}
-      </button>
+            <button className="primary-button" onClick={handleApplyFilter}>
+              필터 적용
+            </button>
 
-      <p>{message}</p>
+            <button className="edit-button" onClick={handleResetFilter}>
+              초기화
+            </button>
+          </div>
+        {transactions.length === 0 ? (
+          <p className="empty-text">거래 내역이 없습니다.</p>
+        ) : (
+          <div className="transaction-list">
+            {transactions.map((transaction) => {
+              const isIncome = transaction.type === "INCOME";
 
-      <hr />
+              return (
+                <div className="transaction-item" key={transaction.id}>
+                  <div className="transaction-info">
+                    <div
+                      className={`transaction-icon ${
+                        isIncome ? "income-bg" : "expense-bg"
+                      }`}
+                    >
+                      {isIncome ? "💵" : "🛒"}
+                    </div>
 
-      <h2>거래 목록</h2>
+                    <div>
+                      <strong>{transaction.category}</strong>
+                      <p>{transaction.description || "설명 없음"}</p>
+                    </div>
+                  </div>
 
-      {transactions.length === 0 ? (
-        <p>거래 내역이 없습니다.</p>
-      ) : (
-        <ul>
-          {transactions.map((transaction) => (
-            <li key={transaction.id}>
-              [{transaction.type}] {transaction.category} /{" "}
-              {transaction.amount}원 / {transaction.description} /{" "}
-              {new Date(transaction.date).toLocaleDateString()}{" "}
-              <button onClick={() => handleDeleteTransaction(transaction.id)}>
-                삭제
-              </button>
-              <button onClick={() => handleStartEdit(transaction)}>
-                수정
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+                  <span
+                    className={`type-badge ${
+                      isIncome ? "badge-income" : "badge-expense"
+                    }`}
+                  >
+                    {isIncome ? "수입" : "지출"}
+                  </span>
+
+                  <strong
+                    className={isIncome ? "income-text" : "expense-text"}
+                  >
+                    {isIncome ? "+" : "-"}
+                    {transaction.amount.toLocaleString()}원
+                  </strong>
+
+                  <span className="transaction-date">
+                    {new Date(transaction.date).toLocaleDateString()}
+                  </span>
+
+                  <div className="action-buttons">
+                    <button
+                      className="edit-button"
+                      onClick={() => handleStartEdit(transaction)}
+                    >
+                      수정
+                    </button>
+                    <button
+                      className="delete-button"
+                      onClick={() =>
+                        handleDeleteTransaction(transaction.id)
+                      }
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </main>
+  </div>
+);
 }
-
 export default DashboardPage;
