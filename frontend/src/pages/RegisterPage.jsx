@@ -1,13 +1,14 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import "./LoginPage.css";
 
 function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  const navigate = useNavigate(); // 페이지를 코드로 이동시키는 함수이다. 회원가입 성공 후 로그인 페이지로 이동 시키려고 쓴다
+  const navigate = useNavigate();
 
   const handleRegister = async () => {
     try {
@@ -20,45 +21,45 @@ function RegisterPage() {
 
       setTimeout(() => {
         navigate("/login");
-      }, 1000);
+      }, 700);
     } catch (error) {
       setMessage(error.response?.data?.message || "회원가입 실패");
     }
   };
 
   return (
-    <div style={{ padding: "50px" }}>
-      <h1>회원가입</h1>
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1 className="auth-logo">
+          Money<span>Log</span>
+        </h1>
 
-      <div>
-        <input
-          type="email"
-          placeholder="이메일"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <p className="auth-subtitle">새 계정을 만들고 소비 관리를 시작하세요</p>
+
+        <div className="auth-form">
+          <input
+            type="email"
+            placeholder="이메일"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
+          <input
+            type="password"
+            placeholder="비밀번호"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <button onClick={handleRegister}>회원가입</button>
+        </div>
+
+        {message && <p className="auth-message">{message}</p>}
+
+        <p className="auth-link-text">
+          이미 계정이 있으면 <Link to="/login">로그인</Link>
+        </p>
       </div>
-
-      <br />
-
-      <div>
-        <input
-          type="password"
-          placeholder="비밀번호"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-
-      <br />
-
-      <button onClick={handleRegister}>회원가입</button>
-
-      <p>{message}</p>
-
-      <p>
-        이미 계정이 있으면 <Link to="/login">로그인</Link>
-      </p>
     </div>
   );
 }

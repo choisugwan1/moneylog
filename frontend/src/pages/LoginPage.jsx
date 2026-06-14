@@ -1,6 +1,9 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import "./LoginPage.css";
+
+
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -31,40 +34,39 @@ function LoginPage() {
   };
 
   return (
-    <div style={{ padding: "50px" }}>
-      <h1>로그인</h1>
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1 className="auth-logo">
+          Money<span>Log</span>
+        </h1>
 
-      <div>
-        <input
-          type="email"
-          placeholder="이메일"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <p className="auth-subtitle">내 소비를 한눈에 관리하세요</p>
+        
+        <div className="auth-form">
+          <input
+            type="email"
+            placehodler="이메일"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
+          <input 
+            type="password"
+            placeholder="비밀번호"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <button onClick={handleLogin}>로그인</button>
+        </div>
+
+        {message && <p className="auth-message">{message}</p>}
+
+        <p className="auth-link-text">
+          계정이 없으면 <Link to="/register">회원가입</Link>
+        </p>
       </div>
-
-      <br />
-
-      <div>
-        <input
-          type="password"
-          placeholder="비밀번호"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-
-      <br />
-
-      <button onClick={handleLogin}>로그인</button>
-
-      <p>{message}</p>
-
-      <p>
-        계정이 없으면 <Link to="/register">회원가입</Link>
-      </p>
     </div>
   );
 }
-
 export default LoginPage;

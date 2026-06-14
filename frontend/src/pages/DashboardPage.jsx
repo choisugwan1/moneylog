@@ -1,14 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import "./DashboardPage.css";
+import SummaryCards from "../components/SummaryCards";
+import ExpensePieChart from "../components/ExpensePieChart";
+import TransactionList from "../components/TransactionList";
 
 function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -312,85 +308,9 @@ function DashboardPage() {
 
         <h2 className="section-title">이번 달 요약</h2>
 
-        <section className="summary-grid">
-          <div className="summary-card">
-            <div className="summary-icon income-bg">↑</div>
-            <div>
-              <p className="summary-label">수입</p>
-              <p className="summary-value income-text">
-                {summary.income.toLocaleString()}원
-              </p>
-              <p className="summary-desc">이번 달 총 수입</p>
-            </div>
-          </div>
+        <SummaryCards summary={summary} />
 
-          <div className="summary-card">
-            <div className="summary-icon expense-bg">↓</div>
-            <div>
-              <p className="summary-label">지출</p>
-              <p className="summary-value expense-text">
-                {summary.expense.toLocaleString()}원
-              </p>
-              <p className="summary-desc">이번 달 총 지출</p>
-            </div>
-          </div>
-
-          <div className="summary-card">
-            <div className="summary-icon balance-bg">💳</div>
-            <div>
-              <p className="summary-label">잔액</p>
-              <p className="summary-value balance-text">
-                {summary.balance.toLocaleString()}원
-              </p>
-              <p className="summary-desc">수입 - 지출</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="panel">
-          <h2 className="panel-title">카테고리별 지출 비중</h2>
-
-          {expenseCategoryData.length === 0 ? (
-            <p className="empty-text">지출 데이터가 없습니다.</p>
-          ) : (
-            <div className="chart-box">
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={expenseCategoryData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label
-                  >
-                    {expenseCategoryData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={
-                          [
-                            "#ef4444",
-                            "#f97316",
-                            "#eab308",
-                            "#22c55e",
-                            "#3b82f6",
-                            "#8b5cf6",
-                          ][index % 6]
-                        }
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value) =>
-                      `${Number(value).toLocaleString()}원`
-                    }
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </section>
+        <ExpensePieChart expenseCategoryData={expenseCategoryData} />
 
         <section className="panel">
           <h2 className="panel-title">거래 등록</h2>
